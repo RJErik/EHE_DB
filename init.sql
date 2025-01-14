@@ -1,0 +1,18 @@
+\echo 'Starting database initialization...'
+
+\ir 'Tables/user.sql'
+\ir 'Tables/platform_stock.sql'
+\ir 'Tables/market_candle.sql'
+\ir 'Tables/watchlist.sql'
+\ir 'Tables/watchlist_item.sql'
+\ir 'Tables/api_key.sql'
+\ir 'Tables/alert.sql'
+\ir 'Tables/portfolio.sql'
+\ir 'Tables/holding.sql'
+\ir 'Tables/automated_trade_rule.sql'
+\ir 'Tables/transaction.sql'
+\ir 'Tables/log.sql'
+\ir 'Tables/error_log.sql'
+\ir 'Tables/admin.sql'
+
+\echo 'Database initialization completed.'
