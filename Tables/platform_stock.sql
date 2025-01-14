@@ -1,0 +1,5 @@
+CREATE TABLE platform_stock (
+    platform_stock_id INT GENERATED ALWAYS AS IDENTITY (START WITH 3073) PRIMARY KEY,
+    platform_name VARCHAR(100) NOT NULL UNIQUE,
+    stock_symbol VARCHAR(50) NOT NULL UNIQUE
+);
