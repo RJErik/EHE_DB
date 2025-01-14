@@ -1,0 +1,14 @@
+CREATE TABLE log (
+    log_id INT GENERATED ALWAYS AS IDENTITY (START WITH 9867) PRIMARY KEY,
+    user_id INT NOT NULL,
+    action_description TEXT NOT NULL,
+    action_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE log
+ADD CONSTRAINT fk_log_user
+FOREIGN KEY (user_id) REFERENCES "user"(user_id);
+
+ALTER TABLE log
+ADD CONSTRAINT chk_log_action_date
+CHECK (action_date <= CURRENT_TIMESTAMP);
