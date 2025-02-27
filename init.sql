@@ -14,6 +14,10 @@
 \ir 'Tables/log_history.sql'
 \ir 'Tables/error_log_history.sql'
 \ir 'Tables/admin_history.sql'
+\ir 'Tables/canvas_history.sql'
+\ir 'Tables/point_history.sql'
+\ir 'Tables/line_history.sql'
+\ir 'Tables/text_annotation_history.sql'
 
 \ir 'Tables/user.sql'
 \ir 'Tables/platform_stock.sql'
@@ -29,5 +33,9 @@
 \ir 'Tables/log.sql'
 \ir 'Tables/error_log.sql'
 \ir 'Tables/admin.sql'
+\ir 'Tables/canvas.sql'
+\ir 'Tables/point.sql'
+\ir 'Tables/line.sql'
+\ir 'Tables/text_annotation.sql'
 
 \echo 'Database initialization completed.'
