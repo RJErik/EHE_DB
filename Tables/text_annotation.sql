@@ -30,7 +30,7 @@ ALTER TABLE text_annotation
 ADD CONSTRAINT chk_text_annotation_content
 CHECK (LENGTH(content) BETWEEN 1 AND 500);
 
-ALTER TABLE line
+ALTER TABLE text_annotation
 ADD CONSTRAINT chk_text_annotation_x_axis_date
 CHECK (x <= CURRENT_TIMESTAMP);
 

@@ -1,7 +1,7 @@
 CREATE TABLE point (
     point_id INT GENERATED ALWAYS AS IDENTITY (START WITH 28723) PRIMARY KEY,
     canvas_id INT NOT NULL,
-    x TIMESTAMP) NOT NULL,
+    x TIMESTAMP NOT NULL,
     y DECIMAL(18,8) NOT NULL,
     color VARCHAR(7) NOT NULL,
     size INT NOT NULL,
@@ -25,7 +25,7 @@ ALTER TABLE point
 ADD CONSTRAINT chk_point_size 
 CHECK (size BETWEEN 1 AND 50);  -- Point size range
 
-ALTER TABLE line
+ALTER TABLE point
 ADD CONSTRAINT chk_point_x_axis_date
 CHECK (x <= CURRENT_TIMESTAMP);
 
