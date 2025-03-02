@@ -1,9 +1,9 @@
 CREATE TABLE admin (
     admin_id INT PRIMARY KEY,
     permission_level VARCHAR(100) NOT NULL,
-    audit_created_by INT NOT NULL,
+    audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    audit_updated_by INT,
+    audit_updated_by VARCHAR(255),
     audit_updated_date TIMESTAMP,
     audit_version_number INT NOT NULL DEFAULT 0
 );
@@ -14,51 +14,44 @@ FOREIGN KEY (admin_id) REFERENCES "user"(user_id);
 
 CREATE OR REPLACE FUNCTION trg_admin_audit()
 RETURNS TRIGGER AS $$
+DECLARE
+    dml_type CHAR(1);
+    entity_record RECORD;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        INSERT INTO admin_history (
-            admin_id, permission_level, audit_created_by, 
-            audit_created_date, audit_updated_by, 
-            audit_updated_date, audit_version_number, 
-            history_dml_type, history_logged_date
-        ) VALUES (
-            NEW.admin_id, NEW.permission_level, NEW.audit_created_by, 
-            NEW.audit_created_date, NEW.audit_updated_by, 
-            NEW.audit_updated_date, NEW.audit_version_number, 
-            'i', CURRENT_TIMESTAMP
-        );
+        dml_type := 'i';
+        entity_record := NEW;
     ELSIF TG_OP = 'UPDATE' THEN
-        NEW.audit_updated_by = NEW.audit_created_by;
-        NEW.audit_updated_date = CURRENT_TIMESTAMP;
-        NEW.audit_version_number = NEW.audit_version_number + 1;
-        INSERT INTO admin_history (
-            admin_id, permission_level, audit_created_by, 
-            audit_created_date, audit_updated_by, 
-            audit_updated_date, audit_version_number, 
-            history_dml_type, history_logged_date
-        ) VALUES (
-            OLD.admin_id, OLD.permission_level, OLD.audit_created_by, 
-            OLD.audit_created_date, NEW.audit_updated_by, 
-            CURRENT_TIMESTAMP, NEW.audit_version_number, 
-            'u', CURRENT_TIMESTAMP
-        );
+        dml_type := 'u';
+        entity_record := OLD;
+        NEW.audit_updated_by := current_setting('myapp.current_user', true);
+        NEW.audit_updated_date := CURRENT_TIMESTAMP;
+        NEW.audit_version_number := OLD.audit_version_number + 1;
     ELSIF TG_OP = 'DELETE' THEN
-        INSERT INTO admin_history (
-            admin_id, permission_level, audit_created_by, 
-            audit_created_date, audit_updated_by, 
-            audit_updated_date, audit_version_number, 
-            history_dml_type, history_logged_date
-        ) VALUES (
-            OLD.admin_id, OLD.permission_level, OLD.audit_created_by, 
-            OLD.audit_created_date, OLD.audit_updated_by, 
-            OLD.audit_updated_date, OLD.audit_version_number, 
-            'd', CURRENT_TIMESTAMP
-        );
+        dml_type := 'd';
+        entity_record := OLD;
     END IF;
-    RETURN NEW;
+    INSERT INTO admin_history (
+        admin_id, permission_level, 
+        audit_created_by, audit_created_date, 
+        audit_updated_by, audit_updated_date, 
+        audit_version_number, history_dml_type, 
+        history_logged_date
+    ) VALUES (
+        entity_record.admin_id, entity_record.permission_level, 
+        entity_record.audit_created_by, entity_record.audit_created_date, 
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
+        dml_type, CURRENT_TIMESTAMP
+    );
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
-
 
 CREATE TRIGGER trg_admin_audit
 BEFORE INSERT OR UPDATE OR DELETE ON admin

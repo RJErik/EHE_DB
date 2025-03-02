@@ -8,7 +8,7 @@ CREATE TABLE alert (
     is_active BOOLEAN NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    audit_updated_by VARCHAR(255),
+    audit_updated_by_by VARCHAR(255),
     audit_updated_date TIMESTAMP,
     audit_version_number INT NOT NULL DEFAULT 0
 );
@@ -35,62 +35,46 @@ CHECK (date_created <= CURRENT_TIMESTAMP);
 
 CREATE OR REPLACE FUNCTION trg_alert_audit()
 RETURNS TRIGGER AS $$
+DECLARE
+    dml_type CHAR(1);
+    entity_record RECORD;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        NEW.audit_created_by := current_setting('myapp.current_user', true);
-        NEW.audit_created_date := CURRENT_TIMESTAMP;
-        NEW.audit_version_number := 0;
-
-        INSERT INTO alert_history (
-            alert_id, user_id, platform_stock_id, condition_type, 
-            threshold_value, date_created, is_active, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            NEW.alert_id, NEW.user_id, NEW.platform_stock_id, NEW.condition_type, 
-            NEW.threshold_value, NEW.date_created, NEW.is_active, 
-            NEW.audit_created_by, NEW.audit_created_date, 
-            NULL, NULL, 
-            NEW.audit_version_number, 'i', CURRENT_TIMESTAMP
-        );
+        dml_type := 'i';
+        entity_record := NEW;
     ELSIF TG_OP = 'UPDATE' THEN
+        dml_type := 'u';
+        entity_record := OLD;
         NEW.audit_updated_by := current_setting('myapp.current_user', true);
         NEW.audit_updated_date := CURRENT_TIMESTAMP;
         NEW.audit_version_number := OLD.audit_version_number + 1;
-
-        INSERT INTO alert_history (
-            alert_id, user_id, platform_stock_id, condition_type, 
-            threshold_value, date_created, is_active, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            OLD.alert_id, OLD.user_id, OLD.platform_stock_id, OLD.condition_type, 
-            OLD.threshold_value, OLD.date_created, OLD.is_active, 
-            OLD.audit_created_by, OLD.audit_created_date, 
-            NEW.audit_updated_by, NEW.audit_updated_date, 
-            NEW.audit_version_number, 'u', CURRENT_TIMESTAMP
-        );
     ELSIF TG_OP = 'DELETE' THEN
-        INSERT INTO alert_history (
-            alert_id, user_id, platform_stock_id, condition_type, 
-            threshold_value, date_created, is_active, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            OLD.alert_id, OLD.user_id, OLD.platform_stock_id, OLD.condition_type, 
-            OLD.threshold_value, OLD.date_created, OLD.is_active, 
-            OLD.audit_created_by, OLD.audit_created_date, 
-            OLD.audit_updated_by, OLD.audit_updated_date, 
-            OLD.audit_version_number, 'd', CURRENT_TIMESTAMP
-        );
+        dml_type := 'd';
+        entity_record := OLD;
     END IF;
-    RETURN NEW;
+
+    INSERT INTO alert_history (
+        alert_id, user_id, platform_stock_id, condition_type, 
+        threshold_value, date_created, is_active, 
+        audit_created_by, audit_created_date, 
+        audit_updated_by, audit_updated_date, 
+        audit_version_number, history_dml_type, 
+        history_logged_date
+    ) VALUES (
+        entity_record.alert_id, entity_record.user_id, entity_record.platform_stock_id, 
+        entity_record.condition_type, entity_record.threshold_value, entity_record.date_created, 
+        entity_record.is_active, entity_record.audit_created_by, entity_record.audit_created_date, 
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
+        dml_type, CURRENT_TIMESTAMP
+    );
+
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 

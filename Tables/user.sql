@@ -26,62 +26,44 @@ CHECK (registration_date <= CURRENT_TIMESTAMP);
 
 CREATE OR REPLACE FUNCTION trg_user_audit()
 RETURNS TRIGGER AS $$
+DECLARE
+    dml_type CHAR(1);
+    entity_record RECORD;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        NEW.audit_created_by := current_setting('myapp.current_user', true);
-        NEW.audit_created_date := CURRENT_TIMESTAMP;
-        NEW.audit_version_number := 0;
-
-        INSERT INTO user_history (
-            user_id, user_name, email_hash, password_hash, 
-            account_status, registration_date, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            NEW.user_id, NEW.user_name, NEW.email_hash, NEW.password_hash, 
-            NEW.account_status, NEW.registration_date, 
-            NEW.audit_created_by, NEW.audit_created_date, 
-            NULL, NULL, 
-            NEW.audit_version_number, 'i', CURRENT_TIMESTAMP
-        );
+        dml_type := 'i';
+        entity_record := NEW;
     ELSIF TG_OP = 'UPDATE' THEN
+        dml_type := 'u';
+        entity_record := OLD;
         NEW.audit_updated_by := current_setting('myapp.current_user', true);
         NEW.audit_updated_date := CURRENT_TIMESTAMP;
         NEW.audit_version_number := OLD.audit_version_number + 1;
-
-        INSERT INTO user_history (
-            user_id, user_name, email_hash, password_hash, 
-            account_status, registration_date, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            OLD.user_id, OLD.user_name, OLD.email_hash, OLD.password_hash, 
-            OLD.account_status, OLD.registration_date, 
-            OLD.audit_created_by, OLD.audit_created_date, 
-            NEW.audit_updated_by, NEW.audit_updated_date, 
-            NEW.audit_version_number, 'u', CURRENT_TIMESTAMP
-        );
     ELSIF TG_OP = 'DELETE' THEN
-        INSERT INTO user_history (
-            user_id, user_name, email_hash, password_hash, 
-            account_status, registration_date, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            OLD.user_id, OLD.user_name, OLD.email_hash, OLD.password_hash, 
-            OLD.account_status, OLD.registration_date, 
-            OLD.audit_created_by, OLD.audit_created_date, 
-            OLD.audit_updated_by, OLD.audit_updated_date, 
-            OLD.audit_version_number, 'd', CURRENT_TIMESTAMP
-        );
+        dml_type := 'd';
+        entity_record := OLD;
     END IF;
-    RETURN NEW;
+    INSERT INTO user_history (
+        user_id, user_name, email_hash, password_hash, 
+        account_status, registration_date, 
+        audit_created_by, audit_created_date, 
+        audit_updated_by, audit_updated_date, 
+        audit_version_number, history_dml_type, 
+        history_logged_date
+    ) VALUES (
+        entity_record.user_id, entity_record.user_name, entity_record.email_hash, entity_record.password_hash, 
+        entity_record.account_status, entity_record.registration_date, 
+        entity_record.audit_created_by, entity_record.audit_created_date, 
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
+        dml_type, CURRENT_TIMESTAMP
+    );
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 

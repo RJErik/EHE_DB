@@ -53,62 +53,44 @@ CHECK (volume >= 0);
 
 CREATE OR REPLACE FUNCTION trg_market_candle_audit()
 RETURNS TRIGGER AS $$
+DECLARE
+    dml_type CHAR(1);
+    entity_record RECORD;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        NEW.audit_created_by := current_setting('myapp.current_user', true);
-        NEW.audit_created_date := CURRENT_timestamp;
-        NEW.audit_version_number := 0;
-
-        INSERT INTO market_candle_history (
-            market_candle_id, platform_stock_id, timeframe, timestamp, 
-            open_price, close_price, high_price, low_price, volume, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            NEW.market_candle_id, NEW.platform_stock_id, NEW.timeframe, NEW.timestamp, 
-            NEW.open_price, NEW.close_price, NEW.high_price, NEW.low_price, NEW.volume, 
-            NEW.audit_created_by, NEW.audit_created_date, 
-            NULL, NULL, 
-            NEW.audit_version_number, 'i', CURRENT_timestamp
-        );
+        dml_type := 'i';
+        entity_record := NEW;
     ELSIF TG_OP = 'UPDATE' THEN
+        dml_type := 'u';
+        entity_record := OLD;
         NEW.audit_updated_by := current_setting('myapp.current_user', true);
-        NEW.audit_updated_date := CURRENT_timestamp;
+        NEW.audit_updated_date := CURRENT_TIMESTAMP;
         NEW.audit_version_number := OLD.audit_version_number + 1;
-
-        INSERT INTO market_candle_history (
-            market_candle_id, platform_stock_id, timeframe, timestamp, 
-            open_price, close_price, high_price, low_price, volume, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            OLD.market_candle_id, OLD.platform_stock_id, OLD.timeframe, OLD.timestamp, 
-            OLD.open_price, OLD.close_price, OLD.high_price, OLD.low_price, OLD.volume, 
-            OLD.audit_created_by, OLD.audit_created_date, 
-            NEW.audit_updated_by, NEW.audit_updated_date, 
-            NEW.audit_version_number, 'u', CURRENT_timestamp
-        );
     ELSIF TG_OP = 'DELETE' THEN
-        INSERT INTO market_candle_history (
-            market_candle_id, platform_stock_id, timeframe, timestamp, 
-            open_price, close_price, high_price, low_price, volume, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            OLD.market_candle_id, OLD.platform_stock_id, OLD.timeframe, OLD.timestamp, 
-            OLD.open_price, OLD.close_price, OLD.high_price, OLD.low_price, OLD.volume, 
-            OLD.audit_created_by, OLD.audit_created_date, 
-            OLD.audit_updated_by, OLD.audit_updated_date, 
-            OLD.audit_version_number, 'd', CURRENT_timestamp
-        );
+        dml_type := 'd';
+        entity_record := OLD;
     END IF;
-    RETURN NEW;
+    INSERT INTO market_candle_history (
+        market_candle_id, platform_stock_id, timeframe, timestamp,
+        open_price, close_price, high_price, low_price, volume,
+        audit_created_by, audit_created_date,
+        audit_updated_by, audit_updated_date,
+        audit_version_number, history_dml_type,
+        history_logged_date
+    ) VALUES (
+        entity_record.market_candle_id, entity_record.platform_stock_id, entity_record.timeframe, entity_record.timestamp,
+        entity_record.open_price, entity_record.close_price, entity_record.high_price, entity_record.low_price, entity_record.volume,
+        entity_record.audit_created_by, entity_record.audit_created_date,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
+        dml_type, CURRENT_TIMESTAMP
+    );
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 

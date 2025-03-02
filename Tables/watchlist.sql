@@ -14,56 +14,42 @@ FOREIGN KEY (user_id) REFERENCES "user"(user_id);
 
 CREATE OR REPLACE FUNCTION trg_watchlist_audit()
 RETURNS TRIGGER AS $$
+DECLARE
+    dml_type CHAR(1);
+    entity_record RECORD;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        NEW.audit_created_by := current_setting('myapp.current_user', true);
-        NEW.audit_created_date := CURRENT_TIMESTAMP;
-        NEW.audit_version_number := 0;
-
-        INSERT INTO watchlist_history (
-            watchlist_id, user_id, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            NEW.watchlist_id, NEW.user_id, 
-            NEW.audit_created_by, NEW.audit_created_date, 
-            NULL, NULL, 
-            NEW.audit_version_number, 'i', CURRENT_TIMESTAMP
-        );
+        dml_type := 'i';
+        entity_record := NEW;
     ELSIF TG_OP = 'UPDATE' THEN
+        dml_type := 'u';
+        entity_record := OLD;
         NEW.audit_updated_by := current_setting('myapp.current_user', true);
         NEW.audit_updated_date := CURRENT_TIMESTAMP;
         NEW.audit_version_number := OLD.audit_version_number + 1;
-
-        INSERT INTO watchlist_history (
-            watchlist_id, user_id, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            OLD.watchlist_id, OLD.user_id, 
-            OLD.audit_created_by, OLD.audit_created_date, 
-            NEW.audit_updated_by, NEW.audit_updated_date, 
-            NEW.audit_version_number, 'u', CURRENT_TIMESTAMP
-        );
     ELSIF TG_OP = 'DELETE' THEN
-        INSERT INTO watchlist_history (
-            watchlist_id, user_id, 
-            audit_created_by, audit_created_date, 
-            audit_updated_by, audit_updated_date, 
-            audit_version_number, history_dml_type, 
-            history_logged_date
-        ) VALUES (
-            OLD.watchlist_id, OLD.user_id, 
-            OLD.audit_created_by, OLD.audit_created_date, 
-            OLD.audit_updated_by, OLD.audit_updated_date, 
-            OLD.audit_version_number, 'd', CURRENT_TIMESTAMP
-        );
+        dml_type := 'd';
+        entity_record := OLD;
     END IF;
-    RETURN NEW;
+    INSERT INTO watchlist_history (
+        watchlist_id, user_id, 
+        audit_created_by, audit_created_date, 
+        audit_updated_by, audit_updated_date, 
+        audit_version_number, history_dml_type, 
+        history_logged_date
+    ) VALUES (
+        entity_record.watchlist_id, entity_record.user_id, 
+        entity_record.audit_created_by, entity_record.audit_created_date, 
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
+        dml_type, CURRENT_TIMESTAMP
+    );
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 

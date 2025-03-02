@@ -41,53 +41,44 @@ CHECK (x1 != x2 OR y1 != y2);  -- Prevent zero-length lines
 
 CREATE OR REPLACE FUNCTION trg_line_audit()
 RETURNS TRIGGER AS $$
+DECLARE
+    dml_type CHAR(1);
+    entity_record RECORD;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        NEW.audit_created_by := current_setting('myapp.current_user', true);
-        NEW.audit_created_date := CURRENT_TIMESTAMP;
-        NEW.audit_version_number := 0;
-
-        INSERT INTO line_history (
-            line_id, canvas_id, x1, y1, x2, y2, color, thickness,
-            creation_date, audit_created_by, audit_created_date,
-            audit_updated_by, audit_updated_date, audit_version_number,
-            history_dml_type, history_logged_date
-        ) VALUES (
-            NEW.line_id, NEW.canvas_id, NEW.x1, NEW.y1, NEW.x2, NEW.y2, NEW.color, NEW.thickness,
-            NEW.creation_date, NEW.audit_created_by, NEW.audit_created_date,
-            NULL, NULL, NEW.audit_version_number,
-            'i', CURRENT_TIMESTAMP
-        );
+        dml_type := 'i';
+        entity_record := NEW;
     ELSIF TG_OP = 'UPDATE' THEN
+        dml_type := 'u';
+        entity_record := OLD;
         NEW.audit_updated_by := current_setting('myapp.current_user', true);
         NEW.audit_updated_date := CURRENT_TIMESTAMP;
         NEW.audit_version_number := OLD.audit_version_number + 1;
-
-        INSERT INTO line_history (
-            line_id, canvas_id, x1, y1, x2, y2, color, thickness,
-            creation_date, audit_created_by, audit_created_date,
-            audit_updated_by, audit_updated_date, audit_version_number,
-            history_dml_type, history_logged_date
-        ) VALUES (
-            OLD.line_id, OLD.canvas_id, OLD.x1, OLD.y1, OLD.x2, OLD.y2, OLD.color, OLD.thickness,
-            OLD.creation_date, OLD.audit_created_by, OLD.audit_created_date,
-            NEW.audit_updated_by, NEW.audit_updated_date, NEW.audit_version_number,
-            'u', CURRENT_TIMESTAMP
-        );
     ELSIF TG_OP = 'DELETE' THEN
-        INSERT INTO line_history (
-            line_id, canvas_id, x1, y1, x2, y2, color, thickness,
-            creation_date, audit_created_by, audit_created_date,
-            audit_updated_by, audit_updated_date, audit_version_number,
-            history_dml_type, history_logged_date
-        ) VALUES (
-            OLD.line_id, OLD.canvas_id, OLD.x1, OLD.y1, OLD.x2, OLD.y2, OLD.color, OLD.thickness,
-            OLD.creation_date, OLD.audit_created_by, OLD.audit_created_date,
-            OLD.audit_updated_by, OLD.audit_updated_date, OLD.audit_version_number,
-            'd', CURRENT_TIMESTAMP
-        );
+        dml_type := 'd';
+        entity_record := OLD;
     END IF;
-    RETURN NEW;
+    
+    INSERT INTO line_history (
+        line_id, canvas_id, x1, y1, x2, y2, color, thickness,
+        creation_date, audit_created_by, audit_created_date,
+        audit_updated_by, audit_updated_date, audit_version_number,
+        history_dml_type, history_logged_date
+    ) VALUES (
+        entity_record.line_id, entity_record.canvas_id, entity_record.x1, entity_record.y1,
+        entity_record.x2, entity_record.y2, entity_record.color, entity_record.thickness,
+        entity_record.creation_date, entity_record.audit_created_by, entity_record.audit_created_date,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
+        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
+        dml_type, CURRENT_TIMESTAMP
+    );
+    
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
