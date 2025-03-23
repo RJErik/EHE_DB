@@ -1,9 +1,9 @@
 CREATE TABLE log_history (
     log_history_id INT GENERATED ALWAYS AS IDENTITY (START WITH 99) PRIMARY KEY,
     log_id INT NOT NULL,
-    user_id INT NOT NULL,
-    action_description TEXT NOT NULL,
-    action_date TIMESTAMP NOT NULL,
+    user_id INT,
+    log_description TEXT NOT NULL,
+    log_date TIMESTAMP NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL,
     audit_created_date TIMESTAMP NOT NULL,
     audit_updated_by VARCHAR(255),

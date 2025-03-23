@@ -31,7 +31,7 @@ CHECK (threshold_value > 0);
 
 ALTER TABLE alert
 ADD CONSTRAINT chk_alert_date_created
-CHECK (date_created <= CURRENT_TIMESTAMP);
+CHECK (date_created <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_alert_audit()
 RETURNS TRIGGER AS $$

@@ -22,7 +22,7 @@ CHECK (account_status IN ('ACTIVE', 'SUSPENDED'));
 
 ALTER TABLE "user"
 ADD CONSTRAINT chk_user_registration_date
-CHECK (registration_date <= CURRENT_TIMESTAMP);
+CHECK (registration_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_user_audit()
 RETURNS TRIGGER AS $$

@@ -27,11 +27,11 @@ CHECK (size BETWEEN 1 AND 50);  -- Point size range
 
 ALTER TABLE point
 ADD CONSTRAINT chk_point_x_axis_date
-CHECK (x <= CURRENT_TIMESTAMP);
+CHECK (x <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 ALTER TABLE point
 ADD CONSTRAINT chk_point_creation_date
-CHECK (creation_date <= CURRENT_TIMESTAMP);
+CHECK (creation_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_point_audit()
 RETURNS TRIGGER AS $$

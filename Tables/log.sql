@@ -1,6 +1,6 @@
 CREATE TABLE log (
     log_id INT GENERATED ALWAYS AS IDENTITY (START WITH 9867) PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT,
     log_description TEXT NOT NULL,
     log_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
@@ -16,7 +16,7 @@ FOREIGN KEY (user_id) REFERENCES "user"(user_id);
 
 ALTER TABLE log
 ADD CONSTRAINT chk_log_log_date
-CHECK (log_date <= CURRENT_TIMESTAMP);
+CHECK (log_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_log_audit()
 RETURNS TRIGGER AS $$
@@ -45,7 +45,8 @@ BEGIN
         history_logged_date
     ) VALUES (
         entity_record.log_id, entity_record.user_id, entity_record.log_description, 
-        entity_record.log_date, entity_record.audit_created_by, entity_record.audit_created_date, 
+        COALESCE(entity_record.log_date, CURRENT_TIMESTAMP),
+        entity_record.audit_created_by, entity_record.audit_created_date, 
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
@@ -60,6 +61,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_log_audit
-BEFORE INSERT OR UPDATE OR DELETE ON log
+AFTER INSERT OR UPDATE OR DELETE ON log
 FOR EACH ROW
 EXECUTE PROCEDURE trg_log_audit();

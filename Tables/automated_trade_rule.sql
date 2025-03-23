@@ -51,7 +51,7 @@ CHECK (threshold_value > 0);
 
 ALTER TABLE automated_trade_rule
 ADD CONSTRAINT chk_automated_trade_rule_date_created
-CHECK (date_created <= CURRENT_TIMESTAMP);
+CHECK (date_created <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_automated_trade_rule_audit()
 RETURNS TRIGGER AS $$

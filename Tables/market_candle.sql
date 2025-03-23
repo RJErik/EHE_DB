@@ -25,7 +25,7 @@ CHECK (timeframe IN ('1m', '5m', '15m', '1h', '4h', '1d'));
 
 ALTER TABLE market_candle
 ADD CONSTRAINT chk_market_candle_timestamp
-CHECK (timestamp <= CURRENT_timestamp);
+CHECK (timestamp <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 ALTER TABLE market_candle
 ADD CONSTRAINT chk_market_candle_prices_positive

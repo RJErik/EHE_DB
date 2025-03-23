@@ -21,7 +21,7 @@ FOREIGN KEY (platform_stock_id) REFERENCES platform_stock(platform_stock_id);
 
 ALTER TABLE canvas
 ADD CONSTRAINT chk_canvas_creation_date
-CHECK (creation_date <= CURRENT_TIMESTAMP);
+CHECK (creation_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 ALTER TABLE canvas
 ADD CONSTRAINT chk_canvas_name

@@ -45,7 +45,7 @@ CHECK (status IN ('Pending', 'Completed', 'Failed'));
 
 ALTER TABLE transaction
 ADD CONSTRAINT chk_transaction_transaction_date
-CHECK (transaction_date <= CURRENT_TIMESTAMP);
+CHECK (transaction_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_transaction_audit()
 RETURNS TRIGGER AS $$

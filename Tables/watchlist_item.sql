@@ -20,7 +20,7 @@ FOREIGN KEY (platform_stock_id) REFERENCES platform_stock(platform_stock_id);
 
 ALTER TABLE watchlist_item
 ADD CONSTRAINT chk_watchlist_item_date_added
-CHECK (date_added <= CURRENT_TIMESTAMP);
+CHECK (date_added <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_watchlist_item_audit()
 RETURNS TRIGGER AS $$

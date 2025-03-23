@@ -1,6 +1,6 @@
 CREATE TABLE error_log (
     error_log_id INT GENERATED ALWAYS AS IDENTITY (START WITH 5762) PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT,
     error_description TEXT NOT NULL,
     stack_trace TEXT NOT NULL,
     error_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -17,7 +17,7 @@ FOREIGN KEY (user_id) REFERENCES "user"(user_id);
 
 ALTER TABLE error_log
 ADD CONSTRAINT chk_error_log_error_date
-CHECK (error_date <= CURRENT_TIMESTAMP);
+CHECK (error_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_error_log_audit()
 RETURNS TRIGGER AS $$
@@ -38,6 +38,7 @@ BEGIN
         dml_type := 'd';
         entity_record := OLD;
     END IF;
+    
     INSERT INTO error_log_history (
         error_log_id, user_id, error_description, stack_trace, 
         error_date, audit_created_by, audit_created_date, 
@@ -46,13 +47,15 @@ BEGIN
         history_logged_date
     ) VALUES (
         entity_record.error_log_id, entity_record.user_id, entity_record.error_description, 
-        entity_record.stack_trace, entity_record.error_date, entity_record.audit_created_by, 
+        entity_record.stack_trace, entity_record.error_date, 
+        COALESCE(entity_record.audit_created_by, current_setting('myapp.current_user', true)),
         entity_record.audit_created_date, 
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
         dml_type, CURRENT_TIMESTAMP
     );
+    
     IF TG_OP = 'DELETE' THEN
         RETURN OLD;
     ELSE

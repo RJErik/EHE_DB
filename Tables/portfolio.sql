@@ -21,7 +21,7 @@ CHECK (portfolio_type IN ('Real', 'Simulated'));
 
 ALTER TABLE portfolio
 ADD CONSTRAINT chk_portfolio_creation_date
-CHECK (creation_date <= CURRENT_TIMESTAMP);
+CHECK (creation_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_portfolio_audit()
 RETURNS TRIGGER AS $$

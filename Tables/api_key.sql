@@ -17,7 +17,7 @@ FOREIGN KEY (user_id) REFERENCES "user"(user_id);
 
 ALTER TABLE api_key
 ADD CONSTRAINT chk_api_key_date_added
-CHECK (date_added <= CURRENT_TIMESTAMP);
+CHECK (date_added <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_api_key_audit()
 RETURNS TRIGGER AS $$

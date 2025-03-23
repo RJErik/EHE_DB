@@ -32,11 +32,11 @@ CHECK (LENGTH(content) BETWEEN 1 AND 500);
 
 ALTER TABLE text_annotation
 ADD CONSTRAINT chk_text_annotation_x_axis_date
-CHECK (x <= CURRENT_TIMESTAMP);
+CHECK (x <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 ALTER TABLE text_annotation
 ADD CONSTRAINT chk_text_annotation_creation_date
-CHECK (creation_date <= CURRENT_TIMESTAMP);
+CHECK (creation_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_text_annotation_audit()
 RETURNS TRIGGER AS $$
