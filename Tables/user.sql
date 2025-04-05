@@ -18,7 +18,7 @@ CHECK (LENGTH(user_name) >= 3 AND user_name ~ '^[a-zA-Z0-9_]+$');
 
 ALTER TABLE "user"
 ADD CONSTRAINT chk_user_account_status
-CHECK (account_status IN ('ACTIVE', 'SUSPENDED'));
+CHECK (account_status IN ('ACTIVE', 'SUSPENDED', 'NONVERIFIED'));
 
 ALTER TABLE "user"
 ADD CONSTRAINT chk_user_registration_date
