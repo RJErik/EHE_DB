@@ -18,6 +18,8 @@
 \ir 'Tables/point_history.sql'
 \ir 'Tables/line_history.sql'
 \ir 'Tables/text_annotation_history.sql'
+\ir 'Tables/verification_token.sql'
+\ir 'Tables/email_change_request_history.sql'
 
 \ir 'Tables/user.sql'
 \ir 'Tables/platform_stock.sql'
@@ -37,5 +39,7 @@
 \ir 'Tables/point.sql'
 \ir 'Tables/line.sql'
 \ir 'Tables/text_annotation.sql'
+\ir 'Tables/verification_token_history.sql'
+\ir 'Tables/email_change_request.sql'
 
 \echo 'Database initialization completed.'
