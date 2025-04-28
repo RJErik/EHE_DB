@@ -1,13 +1,16 @@
 CREATE TABLE platform_stock (
     platform_stock_id INT GENERATED ALWAYS AS IDENTITY (START WITH 3073) PRIMARY KEY,
-    platform_name VARCHAR(100) NOT NULL UNIQUE,
-    stock_symbol VARCHAR(50) NOT NULL UNIQUE,
+    platform_name VARCHAR(100) NOT NULL,
+    stock_symbol VARCHAR(50) NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
     audit_updated_date TIMESTAMP,
     audit_version_number INT NOT NULL DEFAULT 0
 );
+
+ALTER TABLE platform_stock ADD CONSTRAINT unique_platform_stock_platform_symbol
+UNIQUE (platform_name, stock_symbol);
 
 CREATE OR REPLACE FUNCTION trg_platform_stock_audit()
 RETURNS TRIGGER AS $$
