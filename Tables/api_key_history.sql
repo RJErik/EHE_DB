@@ -3,7 +3,7 @@ CREATE TABLE api_key_history (
     api_key_id INT NOT NULL,
     user_id INT NOT NULL,
     platform_name VARCHAR(100) NOT NULL,
-    api_key_value_hash VARCHAR(255) NOT NULL,
+    api_key_value_encrypt VARCHAR(255) NOT NULL,
     date_added TIMESTAMP NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL,
     audit_created_date TIMESTAMP NOT NULL,
