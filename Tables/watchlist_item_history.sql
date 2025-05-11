@@ -6,7 +6,7 @@ CREATE TABLE watchlist_item_history (
     date_added TIMESTAMP NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL,
     audit_created_date TIMESTAMP NOT NULL,
-    audit_updated_by VARCHAR(255) NOT NULL,
+    audit_updated_by VARCHAR(255),
     audit_updated_date TIMESTAMP,
     audit_version_number INT,
     history_dml_type CHAR(1) NOT NULL CHECK (history_dml_type IN ('i', 'u', 'd')),
