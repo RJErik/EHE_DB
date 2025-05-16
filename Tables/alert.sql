@@ -8,7 +8,7 @@ CREATE TABLE alert (
     is_active BOOLEAN NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    audit_updated_by_by VARCHAR(255),
+    audit_updated_by VARCHAR(255),
     audit_updated_date TIMESTAMP,
     audit_version_number INT NOT NULL DEFAULT 0
 );
@@ -23,7 +23,7 @@ FOREIGN KEY (platform_stock_id) REFERENCES platform_stock(platform_stock_id);
 
 ALTER TABLE alert
 ADD CONSTRAINT chk_alert_condition_type
-CHECK (condition_type IN ('Price above', 'Price below'));
+CHECK (condition_type IN ('PRICE_ABOVE', 'PRICE_BELOW'));
 
 ALTER TABLE alert
 ADD CONSTRAINT chk_alert_threshold_value
