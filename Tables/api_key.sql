@@ -3,6 +3,7 @@ CREATE TABLE api_key (
     user_id INT NOT NULL,
     platform_name VARCHAR(100) NOT NULL,
     api_key_value_encrypt VARCHAR(255) NOT NULL,
+    secret_key_encrypt VARCHAR(255),
     date_added TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -41,14 +42,14 @@ BEGIN
     
     INSERT INTO api_key_history (
         api_key_id, user_id, platform_name, api_key_value_encrypt, 
-        date_added, audit_created_by, audit_created_date, 
+        secret_key_encrypt, date_added, audit_created_by, audit_created_date, 
         audit_updated_by, audit_updated_date, 
         audit_version_number, history_dml_type, 
         history_logged_date
     ) VALUES (
         entity_record.api_key_id, entity_record.user_id, entity_record.platform_name, 
-        entity_record.api_key_value_encrypt, entity_record.date_added, 
-        entity_record.audit_created_by, entity_record.audit_created_date, 
+        entity_record.api_key_value_encrypt, entity_record.secret_key_encrypt, 
+        entity_record.date_added, entity_record.audit_created_by, entity_record.audit_created_date, 
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
@@ -62,8 +63,3 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_api_key_audit
-BEFORE INSERT OR UPDATE OR DELETE ON api_key
-FOR EACH ROW
-EXECUTE PROCEDURE trg_api_key_audit();
