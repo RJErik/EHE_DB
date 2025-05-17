@@ -2,6 +2,7 @@ CREATE TABLE portfolio_history (
     portfolio_history_id INT GENERATED ALWAYS AS IDENTITY (START WITH 8969) PRIMARY KEY,
     portfolio_id INT NOT NULL,
     user_id INT NOT NULL,
+    api_key_id INT,
     portfolio_name VARCHAR(100) NOT NULL,
     portfolio_type VARCHAR(50) NOT NULL,
     creation_date TIMESTAMP NOT NULL,

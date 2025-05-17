@@ -4,7 +4,6 @@ CREATE TABLE holding_history (
     portfolio_id INT NOT NULL,
     platform_stock_id INT NOT NULL,
     quantity DECIMAL(18, 8) NOT NULL,
-    purchase_price DECIMAL(18, 8) NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL,
     audit_created_date TIMESTAMP NOT NULL,
     audit_updated_by VARCHAR(255),

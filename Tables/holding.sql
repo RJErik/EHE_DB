@@ -3,7 +3,6 @@ CREATE TABLE holding (
     portfolio_id INT NOT NULL,
     platform_stock_id INT NOT NULL,
     quantity DECIMAL(18, 8) NOT NULL,
-    purchase_price DECIMAL(18, 8) NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
@@ -22,10 +21,6 @@ FOREIGN KEY (platform_stock_id) REFERENCES platform_stock(platform_stock_id);
 ALTER TABLE holding
 ADD CONSTRAINT chk_holding_quantity
 CHECK (quantity > 0);
-
-ALTER TABLE holding
-ADD CONSTRAINT chk_holding_purchase_price
-CHECK (purchase_price > 0);
 
 CREATE OR REPLACE FUNCTION trg_holding_audit()
 RETURNS TRIGGER AS $$
@@ -48,13 +43,13 @@ BEGIN
     END IF;
     INSERT INTO holding_history (
         holding_id, portfolio_id, platform_stock_id, quantity, 
-        purchase_price, audit_created_by, audit_created_date, 
+        audit_created_by, audit_created_date, 
         audit_updated_by, audit_updated_date, 
         audit_version_number, history_dml_type, 
         history_logged_date
     ) VALUES (
         entity_record.holding_id, entity_record.portfolio_id, entity_record.platform_stock_id, 
-        entity_record.quantity, entity_record.purchase_price, entity_record.audit_created_by, 
+        entity_record.quantity, entity_record.audit_created_by, 
         entity_record.audit_created_date, 
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
