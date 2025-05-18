@@ -4,6 +4,7 @@ CREATE TABLE portfolio (
     api_key_id INT,
     portfolio_name VARCHAR(100) NOT NULL,
     portfolio_type VARCHAR(50) NOT NULL,
+    reserved_cash DECIMAL(18, 8),
     creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -24,7 +25,6 @@ ALTER TABLE portfolio
 ADD CONSTRAINT chk_portfolio_portfolio_type
 CHECK (portfolio_type IN ('Real', 'Simulated'));
 
--- Add constraint to ensure Real portfolios have an API key
 ALTER TABLE portfolio
 ADD CONSTRAINT chk_portfolio_real_api_key
 CHECK (portfolio_type != 'Real' OR api_key_id IS NOT NULL);
@@ -55,14 +55,14 @@ BEGIN
     
     INSERT INTO portfolio_history (
         portfolio_id, user_id, api_key_id, portfolio_name, portfolio_type, 
-        creation_date, audit_created_by, audit_created_date, 
+        reserved_cash, creation_date, audit_created_by, audit_created_date, 
         audit_updated_by, audit_updated_date, 
         audit_version_number, history_dml_type, 
         history_logged_date
     ) VALUES (
         entity_record.portfolio_id, entity_record.user_id, entity_record.api_key_id,
-        entity_record.portfolio_name, entity_record.portfolio_type, entity_record.creation_date, 
-        entity_record.audit_created_by, entity_record.audit_created_date, 
+        entity_record.portfolio_name, entity_record.portfolio_type, entity_record.reserved_cash,
+        entity_record.creation_date, entity_record.audit_created_by, entity_record.audit_created_date, 
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,

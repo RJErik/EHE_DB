@@ -5,6 +5,7 @@ CREATE TABLE portfolio_history (
     api_key_id INT,
     portfolio_name VARCHAR(100) NOT NULL,
     portfolio_type VARCHAR(50) NOT NULL,
+    reserved_cash DECIMAL(18, 8),
     creation_date TIMESTAMP NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL,
     audit_created_date TIMESTAMP NOT NULL,
