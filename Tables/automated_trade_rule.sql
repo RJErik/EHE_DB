@@ -8,6 +8,7 @@ CREATE TABLE automated_trade_rule (
     quantity DECIMAL(18, 8) NOT NULL,
     threshold_value DECIMAL(18, 8) NOT NULL,
     api_key_id INT NOT NULL,
+	quantity_type VARCHAR(50) NOT NULL,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
@@ -35,11 +36,11 @@ FOREIGN KEY (api_key_id) REFERENCES api_key(api_key_id);
 
 ALTER TABLE automated_trade_rule
 ADD CONSTRAINT chk_automated_trade_rule_condition_type
-CHECK (condition_type IN ('Price above', 'Price below'));
+CHECK (condition_type IN ('PRICE_ABOVE', 'PRICE_BELOW'));
 
 ALTER TABLE automated_trade_rule
 ADD CONSTRAINT chk_automated_trade_rule_action_type
-CHECK (action_type IN ('Buy', 'Sell'));
+CHECK (action_type IN ('BUY', 'SELL'));
 
 ALTER TABLE automated_trade_rule
 ADD CONSTRAINT chk_automated_trade_rule_quantity
@@ -48,6 +49,10 @@ CHECK (quantity > 0);
 ALTER TABLE automated_trade_rule
 ADD CONSTRAINT chk_automated_trade_rule_threshold_value
 CHECK (threshold_value > 0);
+
+ALTER TABLE automated_trade_rule
+ADD CONSTRAINT chk_automated_trade_rule_quantity_type
+CHECK (quantity_type IN ('QUANTITY', 'QUOTE_ORDER_QTY'));
 
 ALTER TABLE automated_trade_rule
 ADD CONSTRAINT chk_automated_trade_rule_date_created
@@ -72,9 +77,10 @@ BEGIN
         dml_type := 'd';
         entity_record := OLD;
     END IF;
+    
     INSERT INTO automated_trade_rule_history (
-        automated_trade_rule_id, user_id, portfolio_id, platform_stock_id, 
-        condition_type, action_type, quantity, threshold_value, 
+        rule_id, user_id, portfolio_id, platform_stock_id, 
+        condition_type, action_type, quantity_type, quantity, threshold_value, 
         api_key_id, date_created, is_active, 
         audit_created_by, audit_created_date, 
         audit_updated_by, audit_updated_date, 
@@ -84,7 +90,7 @@ BEGIN
         entity_record.automated_trade_rule_id, entity_record.user_id, 
         entity_record.portfolio_id, entity_record.platform_stock_id, 
         entity_record.condition_type, entity_record.action_type, 
-        entity_record.quantity, entity_record.threshold_value, 
+        entity_record.quantity_type, entity_record.quantity, entity_record.threshold_value, 
         entity_record.api_key_id, entity_record.date_created, entity_record.is_active, 
         entity_record.audit_created_by, entity_record.audit_created_date, 
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
@@ -92,6 +98,7 @@ BEGIN
         CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
         dml_type, CURRENT_TIMESTAMP
     );
+    
     IF TG_OP = 'DELETE' THEN
         RETURN OLD;
     ELSE
