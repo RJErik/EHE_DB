@@ -33,7 +33,24 @@ ALTER TABLE point
 ADD CONSTRAINT chk_point_creation_date
 CHECK (creation_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
-CREATE OR REPLACE FUNCTION trg_point_audit()
+CREATE OR REPLACE FUNCTION trg_point_set_audit_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        NEW.audit_updated_by := current_setting('myapp.current_user', true);
+        NEW.audit_updated_date := CURRENT_TIMESTAMP;
+        NEW.audit_version_number := OLD.audit_version_number + 1;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_point_set_audit_fields
+BEFORE UPDATE ON point
+FOR EACH ROW
+EXECUTE PROCEDURE trg_point_set_audit_fields();
+
+CREATE OR REPLACE FUNCTION trg_point_audit_log_history()
 RETURNS TRIGGER AS $$
 DECLARE
     dml_type CHAR(1);
@@ -44,38 +61,33 @@ BEGIN
         entity_record := NEW;
     ELSIF TG_OP = 'UPDATE' THEN
         dml_type := 'u';
-        entity_record := OLD;
-        NEW.audit_updated_by := current_setting('myapp.current_user', true);
-        NEW.audit_updated_date := CURRENT_TIMESTAMP;
-        NEW.audit_version_number := OLD.audit_version_number + 1;
+        entity_record := NEW;
     ELSIF TG_OP = 'DELETE' THEN
         dml_type := 'd';
         entity_record := OLD;
     END IF;
+	
     INSERT INTO point_history (
         point_id, canvas_id, x, y, color, size, creation_date,
-        audit_created_by, audit_created_date, 
-        audit_updated_by, audit_updated_date, 
-        audit_version_number, history_dml_type, 
+        audit_created_by, audit_created_date,
+        audit_updated_by, audit_updated_date,
+        audit_version_number, history_dml_type,
         history_logged_date
     ) VALUES (
-        entity_record.point_id, entity_record.canvas_id, entity_record.x, entity_record.y, 
-        entity_record.color, entity_record.size, entity_record.creation_date, 
-        entity_record.audit_created_by, entity_record.audit_created_date, 
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
-        dml_type, CURRENT_TIMESTAMP
+        entity_record.point_id, entity_record.canvas_id, entity_record.x, entity_record.y,
+        entity_record.color, entity_record.size, entity_record.creation_date,
+        entity_record.audit_created_by, entity_record.audit_created_date,
+        entity_record.audit_updated_by, entity_record.audit_updated_date,
+        entity_record.audit_version_number,
+        dml_type,
+        CURRENT_TIMESTAMP
     );
-    IF TG_OP = 'DELETE' THEN
-        RETURN OLD;
-    ELSE
-        RETURN NEW;
-    END IF;
+
+    RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_point_audit
-BEFORE INSERT OR UPDATE OR DELETE ON point
+CREATE TRIGGER trg_point_audit_log_history
+AFTER INSERT OR UPDATE OR DELETE ON point
 FOR EACH ROW
-EXECUTE PROCEDURE trg_point_audit();
+EXECUTE PROCEDURE trg_point_audit_log_history();

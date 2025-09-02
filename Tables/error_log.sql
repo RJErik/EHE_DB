@@ -19,7 +19,24 @@ ALTER TABLE error_log
 ADD CONSTRAINT chk_error_log_error_date
 CHECK (error_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
-CREATE OR REPLACE FUNCTION trg_error_log_audit()
+CREATE OR REPLACE FUNCTION trg_error_log_set_audit_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        NEW.audit_updated_by := current_setting('myapp.current_user', true);
+        NEW.audit_updated_date := CURRENT_TIMESTAMP;
+        NEW.audit_version_number := OLD.audit_version_number + 1;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_error_log_set_audit_fields
+BEFORE UPDATE ON error_log
+FOR EACH ROW
+EXECUTE PROCEDURE trg_error_log_set_audit_fields();
+
+CREATE OR REPLACE FUNCTION trg_error_log_audit_log_history()
 RETURNS TRIGGER AS $$
 DECLARE
     dml_type CHAR(1);
@@ -30,42 +47,33 @@ BEGIN
         entity_record := NEW;
     ELSIF TG_OP = 'UPDATE' THEN
         dml_type := 'u';
-        entity_record := OLD;
-        NEW.audit_updated_by := current_setting('myapp.current_user', true);
-        NEW.audit_updated_date := CURRENT_TIMESTAMP;
-        NEW.audit_version_number := OLD.audit_version_number + 1;
+        entity_record := NEW;
     ELSIF TG_OP = 'DELETE' THEN
         dml_type := 'd';
         entity_record := OLD;
     END IF;
-    
+
     INSERT INTO error_log_history (
-        error_log_id, user_id, error_description, stack_trace, 
-        error_date, audit_created_by, audit_created_date, 
-        audit_updated_by, audit_updated_date, 
-        audit_version_number, history_dml_type, 
+        error_log_id, user_id, error_description, stack_trace,
+        error_date, audit_created_by, audit_created_date,
+        audit_updated_by, audit_updated_date,
+        audit_version_number, history_dml_type,
         history_logged_date
     ) VALUES (
-        entity_record.error_log_id, entity_record.user_id, entity_record.error_description, 
-        entity_record.stack_trace, entity_record.error_date, 
-        COALESCE(entity_record.audit_created_by, current_setting('myapp.current_user', true)),
-        entity_record.audit_created_date, 
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
-        dml_type, CURRENT_TIMESTAMP
+        entity_record.error_log_id, entity_record.user_id, entity_record.error_description,
+        entity_record.stack_trace, entity_record.error_date,
+        entity_record.audit_created_by, entity_record.audit_created_date,
+        entity_record.audit_updated_by, entity_record.audit_updated_date,
+        entity_record.audit_version_number,
+        dml_type,
+        CURRENT_TIMESTAMP
     );
-    
-    IF TG_OP = 'DELETE' THEN
-        RETURN OLD;
-    ELSE
-        RETURN NEW;
-    END IF;
+
+    RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_error_log_audit
-BEFORE INSERT OR UPDATE OR DELETE ON error_log
+CREATE TRIGGER trg_error_log_audit_log_history
+AFTER INSERT OR UPDATE OR DELETE ON error_log
 FOR EACH ROW
-EXECUTE PROCEDURE trg_error_log_audit();
-
+EXECUTE PROCEDURE trg_error_log_audit_log_history();

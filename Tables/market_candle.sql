@@ -51,7 +51,24 @@ ALTER TABLE market_candle
 ADD CONSTRAINT chk_market_candle_volume
 CHECK (volume >= 0);
 
-CREATE OR REPLACE FUNCTION trg_market_candle_audit()
+CREATE OR REPLACE FUNCTION trg_market_candle_set_audit_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        NEW.audit_updated_by := current_setting('myapp.current_user', true);
+        NEW.audit_updated_date := CURRENT_TIMESTAMP;
+        NEW.audit_version_number := OLD.audit_version_number + 1;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_market_candle_set_audit_fields
+BEFORE UPDATE ON market_candle
+FOR EACH ROW
+EXECUTE PROCEDURE trg_market_candle_set_audit_fields();
+
+CREATE OR REPLACE FUNCTION trg_market_candle_audit_log_history()
 RETURNS TRIGGER AS $$
 DECLARE
     dml_type CHAR(1);
@@ -62,14 +79,12 @@ BEGIN
         entity_record := NEW;
     ELSIF TG_OP = 'UPDATE' THEN
         dml_type := 'u';
-        entity_record := OLD;
-        NEW.audit_updated_by := current_setting('myapp.current_user', true);
-        NEW.audit_updated_date := CURRENT_TIMESTAMP;
-        NEW.audit_version_number := OLD.audit_version_number + 1;
+        entity_record := NEW;
     ELSIF TG_OP = 'DELETE' THEN
         dml_type := 'd';
         entity_record := OLD;
     END IF;
+
     INSERT INTO market_candle_history (
         market_candle_id, platform_stock_id, timeframe, timestamp,
         open_price, close_price, high_price, low_price, volume,
@@ -81,20 +96,17 @@ BEGIN
         entity_record.market_candle_id, entity_record.platform_stock_id, entity_record.timeframe, entity_record.timestamp,
         entity_record.open_price, entity_record.close_price, entity_record.high_price, entity_record.low_price, entity_record.volume,
         entity_record.audit_created_by, entity_record.audit_created_date,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
-        dml_type, CURRENT_TIMESTAMP
+        entity_record.audit_updated_by, entity_record.audit_updated_date,
+        entity_record.audit_version_number,
+        dml_type,
+        CURRENT_TIMESTAMP
     );
-    IF TG_OP = 'DELETE' THEN
-        RETURN OLD;
-    ELSE
-        RETURN NEW;
-    END IF;
+
+    RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_market_candle_audit
-BEFORE INSERT OR UPDATE OR DELETE ON market_candle
+CREATE TRIGGER trg_market_candle_audit_log_history
+AFTER INSERT OR UPDATE OR DELETE ON market_candle
 FOR EACH ROW
-EXECUTE PROCEDURE trg_market_candle_audit();
+EXECUTE PROCEDURE trg_market_candle_audit_log_history();

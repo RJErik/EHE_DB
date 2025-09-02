@@ -39,7 +39,24 @@ ALTER TABLE line
 ADD CONSTRAINT chk_line_coordinates
 CHECK (x1 != x2 OR y1 != y2);  -- Prevent zero-length lines
 
-CREATE OR REPLACE FUNCTION trg_line_audit()
+CREATE OR REPLACE FUNCTION trg_line_set_audit_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        NEW.audit_updated_by := current_setting('myapp.current_user', true);
+        NEW.audit_updated_date := CURRENT_TIMESTAMP;
+        NEW.audit_version_number := OLD.audit_version_number + 1;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_line_set_audit_fields
+BEFORE UPDATE ON line
+FOR EACH ROW
+EXECUTE PROCEDURE trg_line_set_audit_fields();
+
+CREATE OR REPLACE FUNCTION trg_line_audit_log_history()
 RETURNS TRIGGER AS $$
 DECLARE
     dml_type CHAR(1);
@@ -50,15 +67,12 @@ BEGIN
         entity_record := NEW;
     ELSIF TG_OP = 'UPDATE' THEN
         dml_type := 'u';
-        entity_record := OLD;
-        NEW.audit_updated_by := current_setting('myapp.current_user', true);
-        NEW.audit_updated_date := CURRENT_TIMESTAMP;
-        NEW.audit_version_number := OLD.audit_version_number + 1;
+        entity_record := NEW;
     ELSIF TG_OP = 'DELETE' THEN
         dml_type := 'd';
         entity_record := OLD;
     END IF;
-    
+
     INSERT INTO line_history (
         line_id, canvas_id, x1, y1, x2, y2, color, thickness,
         creation_date, audit_created_by, audit_created_date,
@@ -68,21 +82,18 @@ BEGIN
         entity_record.line_id, entity_record.canvas_id, entity_record.x1, entity_record.y1,
         entity_record.x2, entity_record.y2, entity_record.color, entity_record.thickness,
         entity_record.creation_date, entity_record.audit_created_by, entity_record.audit_created_date,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
-        dml_type, CURRENT_TIMESTAMP
+        entity_record.audit_updated_by, entity_record.audit_updated_date,
+        entity_record.audit_version_number,
+        dml_type,
+        CURRENT_TIMESTAMP
     );
-    
-    IF TG_OP = 'DELETE' THEN
-        RETURN OLD;
-    ELSE
-        RETURN NEW;
-    END IF;
+
+    RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_line_audit
-BEFORE INSERT OR UPDATE OR DELETE ON line
+CREATE TRIGGER trg_line_audit_log_history
+AFTER INSERT OR UPDATE OR DELETE ON line
 FOR EACH ROW
-EXECUTE PROCEDURE trg_line_audit();
+EXECUTE PROCEDURE trg_line_audit_log_history();
+

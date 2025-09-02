@@ -36,9 +36,24 @@ CREATE INDEX idx_verification_token_token ON verification_token(token);
 CREATE INDEX idx_verification_token_user_id ON verification_token(user_id);
 CREATE INDEX idx_verification_token_user_type ON verification_token(user_id, token_type); -- For finding user tokens
 
+CREATE OR REPLACE FUNCTION trg_verification_token_set_audit_fields()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' THEN
+        NEW.audit_updated_by := current_setting('myapp.current_user', true);
+        NEW.audit_updated_date := CURRENT_TIMESTAMP;
+        NEW.audit_version_number := OLD.audit_version_number + 1;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
--- Audit Trigger Function (Updated to include status)
-CREATE OR REPLACE FUNCTION trg_verification_token_audit()
+CREATE TRIGGER trg_verification_token_set_audit_fields
+BEFORE UPDATE ON verification_token
+FOR EACH ROW
+EXECUTE PROCEDURE trg_verification_token_set_audit_fields();
+
+CREATE OR REPLACE FUNCTION trg_verification_token_audit_log_history()
 RETURNS TRIGGER AS $$
 DECLARE
     dml_type CHAR(1);
@@ -47,31 +62,16 @@ BEGIN
     IF TG_OP = 'INSERT' THEN
         dml_type := 'i';
         entity_record := NEW;
-        -- Ensure status is set if default wasn't applied (shouldn't happen with default)
-        IF entity_record.status IS NULL THEN
-             entity_record.status := 'ACTIVE';
-        END IF;
     ELSIF TG_OP = 'UPDATE' THEN
         dml_type := 'u';
-        entity_record := OLD;
-        -- Only update audit fields if non-audit columns changed, or specifically if status changed
-        IF OLD IS DISTINCT FROM NEW AND OLD.status IS DISTINCT FROM NEW.status THEN
-            NEW.audit_updated_by := current_setting('myapp.current_user', true);
-            NEW.audit_updated_date := CURRENT_TIMESTAMP;
-            NEW.audit_version_number := OLD.audit_version_number + 1;
-        ELSE
-             -- If only audit columns changed somehow, revert them
-             NEW.audit_updated_by := OLD.audit_updated_by;
-             NEW.audit_updated_date := OLD.audit_updated_date;
-             NEW.audit_version_number := OLD.audit_version_number;
-        END IF;
+        entity_record := NEW;
     ELSIF TG_OP = 'DELETE' THEN
         dml_type := 'd';
         entity_record := OLD;
     END IF;
 
     INSERT INTO verification_token_history (
-        verification_token_id, user_id, token, token_type, status, -- Added status
+        verification_token_id, user_id, token, token_type, status,
         issue_date, expiry_date,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
@@ -79,25 +79,20 @@ BEGIN
         history_logged_date
     ) VALUES (
         entity_record.verification_token_id, entity_record.user_id, entity_record.token, entity_record.token_type,
-        entity_record.status, -- Added status
+        entity_record.status,
         entity_record.issue_date, entity_record.expiry_date,
         entity_record.audit_created_by, entity_record.audit_created_date,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_by ELSE entity_record.audit_updated_by END,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_updated_date ELSE entity_record.audit_updated_date END,
-        CASE WHEN TG_OP = 'UPDATE' THEN NEW.audit_version_number ELSE entity_record.audit_version_number END,
-        dml_type, CURRENT_TIMESTAMP
+        entity_record.audit_updated_by, entity_record.audit_updated_date,
+        entity_record.audit_version_number,
+        dml_type,
+        CURRENT_TIMESTAMP
     );
 
-    IF TG_OP = 'DELETE' THEN
-        RETURN OLD;
-    ELSE
-        RETURN NEW;
-    END IF;
+    RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
--- Audit Trigger
-CREATE TRIGGER trg_verification_token_audit
-BEFORE INSERT OR UPDATE OR DELETE ON verification_token
+CREATE TRIGGER trg_verification_token_audit_log_history
+AFTER INSERT OR UPDATE OR DELETE ON verification_token
 FOR EACH ROW
-EXECUTE PROCEDURE trg_verification_token_audit();
+EXECUTE PROCEDURE trg_verification_token_audit_log_history();
