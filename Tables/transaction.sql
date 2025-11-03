@@ -5,7 +5,6 @@ CREATE TABLE transaction (
     transaction_type VARCHAR(50) NOT NULL,
     quantity DECIMAL(18, 8) NOT NULL,
     price DECIMAL(18, 8) NOT NULL,
-    api_key_id INT NOT NULL,
     transaction_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(50) NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
@@ -22,10 +21,6 @@ FOREIGN KEY (portfolio_id) REFERENCES portfolio(portfolio_id);
 ALTER TABLE transaction
 ADD CONSTRAINT fk_transaction_platform_stock
 FOREIGN KEY (platform_stock_id) REFERENCES platform_stock(platform_stock_id);
-
-ALTER TABLE transaction
-ADD CONSTRAINT fk_transaction_api_key
-FOREIGN KEY (api_key_id) REFERENCES api_key(api_key_id);
 
 ALTER TABLE transaction
 ADD CONSTRAINT chk_transaction_transaction_type
@@ -83,14 +78,14 @@ BEGIN
 
     INSERT INTO transaction_history (
         transaction_id, portfolio_id, platform_stock_id, transaction_type,
-        quantity, price, api_key_id, transaction_date, status,
+        quantity, price, transaction_date, status,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
         audit_version_number, history_dml_type,
         history_logged_date
     ) VALUES (
         entity_record.transaction_id, entity_record.portfolio_id, entity_record.platform_stock_id,
-        entity_record.transaction_type, entity_record.quantity, entity_record.price, entity_record.api_key_id,
+        entity_record.transaction_type, entity_record.quantity, entity_record.price,
         entity_record.transaction_date, entity_record.status, entity_record.audit_created_by,
         entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,

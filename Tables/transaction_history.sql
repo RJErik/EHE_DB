@@ -6,7 +6,6 @@ CREATE TABLE transaction_history (
     transaction_type VARCHAR(50) NOT NULL,
     quantity DECIMAL(18, 8) NOT NULL,
     price DECIMAL(18, 8) NOT NULL,
-    api_key_id INT NOT NULL,
     transaction_date TIMESTAMP NOT NULL,
     status VARCHAR(50) NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL,
