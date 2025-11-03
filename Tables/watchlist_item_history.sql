@@ -1,7 +1,7 @@
 CREATE TABLE watchlist_item_history (
     watchlist_item_history_id INT GENERATED ALWAYS AS IDENTITY (START WITH 6670) PRIMARY KEY,
     watchlist_item_id INT NOT NULL,
-    watchlist_id INT NOT NULL,
+    user_id INT NOT NULL,
     platform_stock_id INT NOT NULL,
     date_added TIMESTAMP NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL,

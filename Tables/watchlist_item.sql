@@ -1,6 +1,6 @@
 CREATE TABLE watchlist_item (
     watchlist_item_id INT GENERATED ALWAYS AS IDENTITY (START WITH 3569) PRIMARY KEY,
-    watchlist_id INT NOT NULL,
+    user_id INT NOT NULL,
     platform_stock_id INT NOT NULL,
     date_added TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
@@ -11,8 +11,8 @@ CREATE TABLE watchlist_item (
 );
 
 ALTER TABLE watchlist_item
-ADD CONSTRAINT fk_watchlist_item_watchlist
-FOREIGN KEY (watchlist_id) REFERENCES watchlist(watchlist_id);
+ADD CONSTRAINT fk_watchlist_item_user
+FOREIGN KEY (user_id) REFERENCES "user"(user_id);
 
 ALTER TABLE watchlist_item
 ADD CONSTRAINT fk_watchlist_item_platform_stock
@@ -57,13 +57,13 @@ BEGIN
     END IF;
 
     INSERT INTO watchlist_item_history (
-        watchlist_item_id, watchlist_id, platform_stock_id, date_added,
+        watchlist_item_id, user_id, platform_stock_id, date_added,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
         audit_version_number, history_dml_type,
         history_logged_date
     ) VALUES (
-        entity_record.watchlist_item_id, entity_record.watchlist_id, entity_record.platform_stock_id,
+        entity_record.watchlist_item_id, entity_record.user_id, entity_record.platform_stock_id,
         entity_record.date_added, entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
@@ -79,4 +79,3 @@ CREATE TRIGGER trg_watchlist_item_audit_log_history
 AFTER INSERT OR UPDATE OR DELETE ON watchlist_item
 FOR EACH ROW
 EXECUTE PROCEDURE trg_watchlist_item_audit_log_history();
-
