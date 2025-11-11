@@ -1,5 +1,5 @@
 CREATE TABLE admin (
-    admin_id INT PRIMARY KEY,
+    admin_id INT GENERATED ALWAYS AS IDENTITY (START WITH 7871) PRIMARY KEY,
     permission_level VARCHAR(100) NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
