@@ -8,7 +8,7 @@ CREATE TABLE market_candle (
     high_price DECIMAL(18, 8) NOT NULL,
     low_price DECIMAL(18, 8) NOT NULL,
     volume DECIMAL(18, 8) NOT NULL,
-    audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
+    audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date timestamp NOT NULL DEFAULT CURRENT_timestamp,
     audit_updated_by VARCHAR(255),
     audit_updated_date timestamp,
@@ -55,7 +55,7 @@ CREATE OR REPLACE FUNCTION trg_market_candle_set_audit_fields()
 RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'UPDATE' THEN
-        NEW.audit_updated_by := current_setting('myapp.current_user', true);
+        NEW.audit_updated_by := current_setting('ehe.current_user', true);
         NEW.audit_updated_date := CURRENT_TIMESTAMP;
         NEW.audit_version_number := OLD.audit_version_number + 1;
     END IF;
@@ -110,3 +110,15 @@ CREATE TRIGGER trg_market_candle_audit_log_history
 AFTER INSERT OR UPDATE OR DELETE ON market_candle
 FOR EACH ROW
 EXECUTE PROCEDURE trg_market_candle_audit_log_history();
+
+-- Primary lookup index: Used by findByPlatformStockAndTimeframeAndTimestampEquals
+CREATE INDEX idx_market_candle_stock_timeframe_timestamp 
+ON market_candle(platform_stock_id, timeframe, timestamp);
+
+-- Foreign key lookup optimization
+CREATE INDEX idx_market_candle_platform_stock_id 
+ON market_candle(platform_stock_id);
+
+-- Time-based queries (finding latest candles)
+CREATE INDEX idx_market_candle_timestamp_desc 
+ON market_candle(timestamp DESC);

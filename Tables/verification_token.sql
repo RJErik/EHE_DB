@@ -7,7 +7,7 @@ CREATE TABLE verification_token (
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- Status of the token
     issue_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expiry_date TIMESTAMP NOT NULL,
-    audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
+    audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
     audit_updated_date TIMESTAMP,
@@ -40,7 +40,7 @@ CREATE OR REPLACE FUNCTION trg_verification_token_set_audit_fields()
 RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'UPDATE' THEN
-        NEW.audit_updated_by := current_setting('myapp.current_user', true);
+        NEW.audit_updated_by := current_setting('ehe.current_user', true);
         NEW.audit_updated_date := CURRENT_TIMESTAMP;
         NEW.audit_version_number := OLD.audit_version_number + 1;
     END IF;

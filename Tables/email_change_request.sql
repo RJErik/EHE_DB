@@ -2,7 +2,7 @@ CREATE TABLE email_change_request (
     email_change_request_id INT GENERATED ALWAYS AS IDENTITY (START WITH 9607) PRIMARY KEY,
     verification_token_id INT NOT NULL UNIQUE,
     new_email VARCHAR(255) NOT NULL,
-    audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
+    audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
     audit_updated_date TIMESTAMP,
@@ -26,7 +26,7 @@ CREATE OR REPLACE FUNCTION trg_email_change_request_set_audit_fields()
 RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'UPDATE' THEN
-        NEW.audit_updated_by := current_setting('myapp.current_user', true);
+        NEW.audit_updated_by := current_setting('ehe.current_user', true);
         NEW.audit_updated_date := CURRENT_TIMESTAMP;
         NEW.audit_version_number := OLD.audit_version_number + 1;
     END IF;

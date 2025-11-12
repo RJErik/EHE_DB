@@ -5,7 +5,7 @@ CREATE TABLE api_key (
     api_key_value VARCHAR(255) NOT NULL,
     secret_key VARCHAR(255),
     date_added TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('myapp.current_user', true),
+    audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
     audit_updated_date TIMESTAMP,
@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION trg_api_key_set_audit_fields()
 RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'UPDATE' THEN
-        NEW.audit_updated_by := current_setting('myapp.current_user', true);
+        NEW.audit_updated_by := current_setting('ehe.current_user', true);
         NEW.audit_updated_date := CURRENT_TIMESTAMP;
         NEW.audit_version_number := OLD.audit_version_number + 1;
     END IF;
