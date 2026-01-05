@@ -60,15 +60,13 @@ BEGIN
         email_change_request_id, verification_token_id, new_email,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
         entity_record.email_change_request_id, entity_record.verification_token_id, entity_record.new_email,
         entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

@@ -1,7 +1,7 @@
 CREATE TABLE platform_stock (
     platform_stock_id INT GENERATED ALWAYS AS IDENTITY (START WITH 3073) PRIMARY KEY,
-    platform_name VARCHAR(100) NOT NULL,
-    stock_symbol VARCHAR(50) NOT NULL,
+    platform_id INT NOT NULL,
+    stock_id INT NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
@@ -9,8 +9,17 @@ CREATE TABLE platform_stock (
     audit_version_number INT NOT NULL DEFAULT 0
 );
 
-ALTER TABLE platform_stock ADD CONSTRAINT unique_platform_stock_platform_symbol
-UNIQUE (platform_name, stock_symbol);
+ALTER TABLE platform_stock 
+ADD CONSTRAINT fk_platform_stock_platform 
+FOREIGN KEY (platform_id) REFERENCES platform(platform_id);
+
+ALTER TABLE platform_stock 
+ADD CONSTRAINT fk_platform_stock_stock 
+FOREIGN KEY (stock_id) REFERENCES stock(stock_id);
+
+ALTER TABLE platform_stock 
+ADD CONSTRAINT unique_platform_stock_platform_stock 
+UNIQUE (platform_id, stock_id);
 
 CREATE OR REPLACE FUNCTION trg_platform_stock_set_audit_fields()
 RETURNS TRIGGER AS $$
@@ -47,18 +56,16 @@ BEGIN
     END IF;
 
     INSERT INTO platform_stock_history (
-        platform_stock_id, platform_name, stock_symbol,
+        platform_stock_id, platform_id, stock_id,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
-        entity_record.platform_stock_id, entity_record.platform_name, entity_record.stock_symbol,
+        entity_record.platform_stock_id, entity_record.platform_id, entity_record.stock_id,
         entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

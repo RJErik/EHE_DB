@@ -2,7 +2,7 @@
 CREATE TABLE verification_token (
     verification_token_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id INT NOT NULL,
-    token VARCHAR(255) NOT NULL UNIQUE,
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
     token_type VARCHAR(50) NOT NULL, -- e.g., REGISTRATION, PASSWORD_RESET, EMAIL_CHANGE
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- Status of the token
     issue_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -29,8 +29,12 @@ ALTER TABLE verification_token
 ADD CONSTRAINT chk_verification_token_status
 CHECK (status IN ('ACTIVE', 'USED', 'EXPIRED', 'INVALIDATED'));
 
+ALTER TABLE verification_token
+ADD CONSTRAINT chk_verification_token_expiry_after_issue
+CHECK (expiry_date > issue_date);
+
 -- Index for faster token lookup
-CREATE INDEX idx_verification_token_token ON verification_token(token);
+CREATE INDEX idx_verification_token_token_hash ON verification_token(token_hash);
 
 -- Index for faster user token lookup
 CREATE INDEX idx_verification_token_user_id ON verification_token(user_id);
@@ -71,21 +75,19 @@ BEGIN
     END IF;
 
     INSERT INTO verification_token_history (
-        verification_token_id, user_id, token, token_type, status,
+        verification_token_id, user_id, token_hash, token_type, status,
         issue_date, expiry_date,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
-        entity_record.verification_token_id, entity_record.user_id, entity_record.token, entity_record.token_type,
+        entity_record.verification_token_id, entity_record.user_id, entity_record.token_hash, entity_record.token_type,
         entity_record.status,
         entity_record.issue_date, entity_record.expiry_date,
         entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

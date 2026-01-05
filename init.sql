@@ -1,6 +1,8 @@
 \echo 'Starting database initialization...'
 
 \ir 'Tables/user_history.sql'
+\ir 'Tables/stock_history.sql'
+\ir 'Tables/platform_history.sql'
 \ir 'Tables/platform_stock_history.sql'
 \ir 'Tables/market_candle_history.sql'
 \ir 'Tables/watchlist_item_history.sql'
@@ -13,11 +15,13 @@
 \ir 'Tables/log_history.sql'
 \ir 'Tables/error_log_history.sql'
 \ir 'Tables/admin_history.sql'
-\ir 'Tables/verification_token.sql'
+\ir 'Tables/verification_token_history.sql'
 \ir 'Tables/email_change_request_history.sql'
 \ir 'Tables/jwt_refresh_token_history.sql'
 
 \ir 'Tables/user.sql'
+\ir 'Tables/stock.sql'
+\ir 'Tables/platform.sql'
 \ir 'Tables/platform_stock.sql'
 \ir 'Tables/market_candle.sql'
 \ir 'Tables/watchlist_item.sql'
@@ -30,7 +34,7 @@
 \ir 'Tables/log.sql'
 \ir 'Tables/error_log.sql'
 \ir 'Tables/admin.sql'
-\ir 'Tables/verification_token_history.sql'
+\ir 'Tables/verification_token.sql'
 \ir 'Tables/email_change_request.sql'
 \ir 'Tables/jwt_refresh_token.sql'
 

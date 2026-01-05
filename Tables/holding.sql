@@ -12,7 +12,8 @@ CREATE TABLE holding (
 
 ALTER TABLE holding
 ADD CONSTRAINT fk_holding_portfolio
-FOREIGN KEY (portfolio_id) REFERENCES portfolio(portfolio_id);
+FOREIGN KEY (portfolio_id) REFERENCES portfolio(portfolio_id)
+ON DELETE CASCADE;
 
 ALTER TABLE holding
 ADD CONSTRAINT fk_holding_platform_stock
@@ -21,6 +22,10 @@ FOREIGN KEY (platform_stock_id) REFERENCES platform_stock(platform_stock_id);
 ALTER TABLE holding
 ADD CONSTRAINT chk_holding_quantity
 CHECK (quantity > 0);
+
+ALTER TABLE holding 
+ADD CONSTRAINT uq_holding_portfolio_stock 
+UNIQUE (portfolio_id, platform_stock_id);
 
 CREATE OR REPLACE FUNCTION trg_holding_set_audit_fields()
 RETURNS TRIGGER AS $$
@@ -60,16 +65,14 @@ BEGIN
         holding_id, portfolio_id, platform_stock_id, quantity,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
         entity_record.holding_id, entity_record.portfolio_id, entity_record.platform_stock_id,
         entity_record.quantity, entity_record.audit_created_by,
         entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

@@ -18,9 +18,10 @@ ALTER TABLE watchlist_item
 ADD CONSTRAINT fk_watchlist_item_platform_stock
 FOREIGN KEY (platform_stock_id) REFERENCES platform_stock(platform_stock_id);
 
-ALTER TABLE watchlist_item
-ADD CONSTRAINT chk_watchlist_item_date_added
-CHECK (date_added <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
+ALTER TABLE watchlist_item 
+ADD CONSTRAINT uq_watchlist_user_stock 
+UNIQUE (user_id, platform_stock_id);
+
 
 CREATE OR REPLACE FUNCTION trg_watchlist_item_set_audit_fields()
 RETURNS TRIGGER AS $$
@@ -60,15 +61,13 @@ BEGIN
         watchlist_item_id, user_id, platform_stock_id, date_added,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
         entity_record.watchlist_item_id, entity_record.user_id, entity_record.platform_stock_id,
         entity_record.date_added, entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

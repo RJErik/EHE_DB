@@ -6,7 +6,6 @@ CREATE TABLE alert_history (
     condition_type VARCHAR(50) NOT NULL,
     threshold_value DECIMAL(18, 8) NOT NULL,
     date_created TIMESTAMP NOT NULL,
-    is_active BOOLEAN NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL,
     audit_created_date TIMESTAMP NOT NULL,
     audit_updated_by VARCHAR(255),

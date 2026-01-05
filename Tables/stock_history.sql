@@ -1,11 +1,7 @@
-CREATE TABLE api_key_history (
-    api_key_history_id INT GENERATED ALWAYS AS IDENTITY (START WITH 7529) PRIMARY KEY,
-    api_key_id INT NOT NULL,
-    user_id INT NOT NULL,
-    platform_id INT NOT NULL,
-    api_key_value VARCHAR(255) NOT NULL,
-    secret_key VARCHAR(255),
-    date_added TIMESTAMP NOT NULL,
+CREATE TABLE stock_history (
+    stock_history_id INT GENERATED ALWAYS AS IDENTITY (START WITH 1614) PRIMARY KEY,
+    stock_id INT NOT NULL,
+    stock_symbol VARCHAR(255),
     audit_created_by VARCHAR(255) NOT NULL,
     audit_created_date TIMESTAMP NOT NULL,
     audit_updated_by VARCHAR(255),

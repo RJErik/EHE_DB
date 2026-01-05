@@ -1,9 +1,9 @@
 CREATE TABLE portfolio (
     portfolio_id INT GENERATED ALWAYS AS IDENTITY (START WITH 8154) PRIMARY KEY,
     user_id INT NOT NULL,
-    api_key_id INT,
-    portfolio_name VARCHAR(100) NOT NULL,
-    reserved_cash DECIMAL(18, 8),
+    api_key_id INT NOT NULL,
+    portfolio_name VARCHAR(100) NOT NULL UNIQUE,
+    reserved_cash DECIMAL(18, 8) NOT NULL DEFAULT 0,
     creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -18,11 +18,16 @@ FOREIGN KEY (user_id) REFERENCES "user"(user_id);
 
 ALTER TABLE portfolio
 ADD CONSTRAINT fk_portfolio_api_key
-FOREIGN KEY (api_key_id) REFERENCES api_key(api_key_id);
+FOREIGN KEY (api_key_id) REFERENCES api_key(api_key_id)
+ON DELETE CASCADE;
 
 ALTER TABLE portfolio
-ADD CONSTRAINT chk_portfolio_creation_date
-CHECK (creation_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
+ADD CONSTRAINT chk_portfolio_reserved_cash
+CHECK (reserved_cash >= 0);
+
+ALTER TABLE portfolio
+ADD CONSTRAINT chk_portfolio_portfolio_name
+CHECK (portfolio_name ~ '^[a-zA-Z0-9_]{1,100}$');
 
 CREATE OR REPLACE FUNCTION trg_portfolio_set_audit_fields()
 RETURNS TRIGGER AS $$
@@ -62,16 +67,14 @@ BEGIN
         portfolio_id, user_id, api_key_id, portfolio_name,
         reserved_cash, creation_date, audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
         entity_record.portfolio_id, entity_record.user_id, entity_record.api_key_id,
         entity_record.portfolio_name, entity_record.reserved_cash,
         entity_record.creation_date, entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

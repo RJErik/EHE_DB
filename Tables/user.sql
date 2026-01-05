@@ -14,7 +14,7 @@ CREATE TABLE "user" (
 
 ALTER TABLE "user"
 ADD CONSTRAINT chk_user_user_name
-CHECK (LENGTH(user_name) >= 3 AND user_name ~ '^[a-zA-Z0-9_]+$');
+CHECK (user_name ~ '^[a-zA-Z0-9_]{3,100}$');
 
 ALTER TABLE "user"
 ADD CONSTRAINT chk_user_account_status
@@ -22,11 +22,7 @@ CHECK (account_status IN ('ACTIVE', 'SUSPENDED', 'NONVERIFIED'));
 
 ALTER TABLE "user"
 ADD CONSTRAINT chk_user_email
-CHECK (email ~ '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-
-ALTER TABLE "user"
-ADD CONSTRAINT chk_user_registration_date
-CHECK (registration_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
+CHECK (email ~ '^(?=.{1,255}$)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
 
 CREATE OR REPLACE FUNCTION trg_user_set_audit_fields()
 RETURNS TRIGGER AS $$
@@ -67,16 +63,14 @@ BEGIN
         account_status, registration_date,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
         entity_record.user_id, entity_record.user_name, entity_record.email, entity_record.password_hash,
         entity_record.account_status, entity_record.registration_date,
         entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

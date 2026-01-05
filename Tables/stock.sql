@@ -1,8 +1,6 @@
-CREATE TABLE log (
-    log_id INT GENERATED ALWAYS AS IDENTITY (START WITH 9867) PRIMARY KEY,
-    user_id INT,
-    log_description TEXT NOT NULL,
-    log_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE stock (
+    stock_id INT GENERATED ALWAYS AS IDENTITY (START WITH 9829) PRIMARY KEY,
+    stock_symbol VARCHAR(255) NOT NULL UNIQUE,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
@@ -10,11 +8,11 @@ CREATE TABLE log (
     audit_version_number INT NOT NULL DEFAULT 0
 );
 
-ALTER TABLE log
-ADD CONSTRAINT fk_log_user
-FOREIGN KEY (user_id) REFERENCES "user"(user_id);
+ALTER TABLE stock
+ADD CONSTRAINT uq_stock_symbol
+UNIQUE (stock_symbol);
 
-CREATE OR REPLACE FUNCTION trg_log_set_audit_fields()
+CREATE OR REPLACE FUNCTION trg_stock_set_audit_fields()
 RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'UPDATE' THEN
@@ -26,12 +24,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_log_set_audit_fields
-BEFORE UPDATE ON log
+CREATE TRIGGER trg_stock_set_audit_fields
+BEFORE UPDATE ON stock
 FOR EACH ROW
-EXECUTE PROCEDURE trg_log_set_audit_fields();
+EXECUTE PROCEDURE trg_stock_set_audit_fields();
 
-CREATE OR REPLACE FUNCTION trg_log_audit_log_history()
+CREATE OR REPLACE FUNCTION trg_stock_audit_log_history()
 RETURNS TRIGGER AS $$
 DECLARE
     dml_type CHAR(1);
@@ -48,14 +46,13 @@ BEGIN
         entity_record := OLD;
     END IF;
 
-    INSERT INTO log_history (
-        log_id, user_id, log_description, log_date,
+    INSERT INTO stock_history (
+        stock_id, stock_symbol,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
         audit_version_number, history_dml_type
     ) VALUES (
-        entity_record.log_id, entity_record.user_id, entity_record.log_description,
-        entity_record.log_date,
+        entity_record.stock_id, entity_record.stock_symbol,
         entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
@@ -66,7 +63,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_log_audit_log_history
-AFTER INSERT OR UPDATE OR DELETE ON log
+CREATE TRIGGER trg_stock_audit_log_history
+AFTER INSERT OR UPDATE OR DELETE ON stock
 FOR EACH ROW
-EXECUTE PROCEDURE trg_log_audit_log_history();
+EXECUTE PROCEDURE trg_stock_audit_log_history();

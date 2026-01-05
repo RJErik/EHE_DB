@@ -2,7 +2,7 @@ CREATE TABLE verification_token_history (
     verification_token_history_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     verification_token_id INT NOT NULL,
     user_id INT NOT NULL,
-    token VARCHAR(255) NOT NULL,
+    token_hash VARCHAR(255) NOT NULL,
     token_type VARCHAR(50) NOT NULL,
     status VARCHAR(20) NOT NULL, -- Added status column
     issue_date TIMESTAMP NOT NULL,

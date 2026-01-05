@@ -1,6 +1,6 @@
 CREATE TABLE jwt_refresh_token (
     jwt_refresh_token_id INT GENERATED ALWAYS AS IDENTITY (START WITH 5508) PRIMARY KEY,
-	user_id INT,
+	user_id INT NOT NULL,
 	jwt_refresh_token_hash VARCHAR(255) NOT NULL,
 	jwt_refresh_token_expiry_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '7 day',
 	jwt_refresh_token_max_expiry_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP + INTERVAL '30 day',
@@ -14,14 +14,6 @@ CREATE TABLE jwt_refresh_token (
 ALTER TABLE jwt_refresh_token
 ADD CONSTRAINT fk_jwt_refresh_token_user
 FOREIGN KEY (user_id) REFERENCES "user"(user_id);
-
-ALTER TABLE jwt_refresh_token
-ADD CONSTRAINT chk_jwt_refresh_token_expiry_date
-CHECK (jwt_refresh_token_expiry_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
-
-ALTER TABLE jwt_refresh_token
-ADD CONSTRAINT chk_jwt_refresh_token_max_expiry_date
-CHECK (jwt_refresh_token_max_expiry_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 ALTER TABLE jwt_refresh_token
 ADD CONSTRAINT chk_jwt_refresh_token_expiry_order
@@ -66,16 +58,14 @@ BEGIN
         jwt_refresh_token_expiry_date, jwt_refresh_token_max_expiry_date,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
         entity_record.jwt_refresh_token_id, entity_record.user_id, entity_record.jwt_refresh_token_hash,
         entity_record.jwt_refresh_token_expiry_date, entity_record.jwt_refresh_token_max_expiry_date,
         entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

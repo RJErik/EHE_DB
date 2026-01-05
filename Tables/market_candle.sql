@@ -24,10 +24,6 @@ ADD CONSTRAINT chk_market_candle_timeframe
 CHECK (timeframe IN ('1m', '5m', '15m', '1h', '4h', '1d'));
 
 ALTER TABLE market_candle
-ADD CONSTRAINT chk_market_candle_timestamp
-CHECK (timestamp <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
-
-ALTER TABLE market_candle
 ADD CONSTRAINT chk_market_candle_prices_positive
 CHECK (open_price > 0 AND close_price > 0 AND high_price > 0 AND low_price > 0);
 
@@ -50,6 +46,11 @@ CHECK (close_price BETWEEN low_price AND high_price);
 ALTER TABLE market_candle
 ADD CONSTRAINT chk_market_candle_volume
 CHECK (volume >= 0);
+
+ALTER TABLE market_candle 
+ADD CONSTRAINT uq_market_candle 
+UNIQUE (platform_stock_id, timeframe, timestamp);
+
 
 CREATE OR REPLACE FUNCTION trg_market_candle_set_audit_fields()
 RETURNS TRIGGER AS $$
@@ -90,16 +91,14 @@ BEGIN
         open_price, close_price, high_price, low_price, volume,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
         entity_record.market_candle_id, entity_record.platform_stock_id, entity_record.timeframe, entity_record.timestamp,
         entity_record.open_price, entity_record.close_price, entity_record.high_price, entity_record.low_price, entity_record.volume,
         entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

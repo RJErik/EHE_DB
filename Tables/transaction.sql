@@ -14,9 +14,10 @@ CREATE TABLE transaction (
     audit_version_number INT NOT NULL DEFAULT 0
 );
 
-ALTER TABLE transaction
+ALTER TABLE "transaction"
 ADD CONSTRAINT fk_transaction_portfolio
-FOREIGN KEY (portfolio_id) REFERENCES portfolio(portfolio_id);
+FOREIGN KEY (portfolio_id) REFERENCES portfolio(portfolio_id)
+ON DELETE CASCADE;
 
 ALTER TABLE transaction
 ADD CONSTRAINT fk_transaction_platform_stock
@@ -24,7 +25,7 @@ FOREIGN KEY (platform_stock_id) REFERENCES platform_stock(platform_stock_id);
 
 ALTER TABLE transaction
 ADD CONSTRAINT chk_transaction_transaction_type
-CHECK (transaction_type IN ('Buy', 'Sell'));
+CHECK (transaction_type IN ('BUY', 'SELL'));
 
 ALTER TABLE transaction
 ADD CONSTRAINT chk_transaction_quantity
@@ -36,11 +37,7 @@ CHECK (price > 0);
 
 ALTER TABLE transaction
 ADD CONSTRAINT chk_transaction_status
-CHECK (status IN ('Pending', 'Completed', 'Failed'));
-
-ALTER TABLE transaction
-ADD CONSTRAINT chk_transaction_transaction_date
-CHECK (transaction_date <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
+CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED'));
 
 CREATE OR REPLACE FUNCTION trg_transaction_set_audit_fields()
 RETURNS TRIGGER AS $$
@@ -81,8 +78,7 @@ BEGIN
         quantity, price, transaction_date, status,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
         entity_record.transaction_id, entity_record.portfolio_id, entity_record.platform_stock_id,
         entity_record.transaction_type, entity_record.quantity, entity_record.price,
@@ -90,8 +86,7 @@ BEGIN
         entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

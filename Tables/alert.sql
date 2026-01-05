@@ -5,7 +5,6 @@ CREATE TABLE alert (
     condition_type VARCHAR(50) NOT NULL,
     threshold_value DECIMAL(18, 8) NOT NULL,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
@@ -28,10 +27,6 @@ CHECK (condition_type IN ('PRICE_ABOVE', 'PRICE_BELOW'));
 ALTER TABLE alert
 ADD CONSTRAINT chk_alert_threshold_value
 CHECK (threshold_value > 0);
-
-ALTER TABLE alert
-ADD CONSTRAINT chk_alert_date_created
-CHECK (date_created <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_alert_set_audit_fields()
 RETURNS TRIGGER AS $$
@@ -69,19 +64,17 @@ BEGIN
 
     INSERT INTO alert_history (
         alert_id, user_id, platform_stock_id, condition_type,
-        threshold_value, date_created, is_active,
+        threshold_value, date_created,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
         entity_record.alert_id, entity_record.user_id, entity_record.platform_stock_id,
         entity_record.condition_type, entity_record.threshold_value, entity_record.date_created,
-        entity_record.is_active, entity_record.audit_created_by, entity_record.audit_created_date,
+       entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

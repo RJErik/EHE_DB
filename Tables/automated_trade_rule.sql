@@ -7,10 +7,8 @@ CREATE TABLE automated_trade_rule (
     action_type VARCHAR(50) NOT NULL,
     quantity DECIMAL(18, 8) NOT NULL,
     threshold_value DECIMAL(18, 8) NOT NULL,
-    api_key_id INT NOT NULL,
 	quantity_type VARCHAR(50) NOT NULL,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
@@ -24,15 +22,12 @@ FOREIGN KEY (user_id) REFERENCES "user"(user_id);
 
 ALTER TABLE automated_trade_rule
 ADD CONSTRAINT fk_automated_trade_rule_portfolio
-FOREIGN KEY (portfolio_id) REFERENCES portfolio(portfolio_id);
+FOREIGN KEY (portfolio_id) REFERENCES portfolio(portfolio_id)
+ON DELETE CASCADE;
 
 ALTER TABLE automated_trade_rule
 ADD CONSTRAINT fk_automated_trade_rule_platform_stock
 FOREIGN KEY (platform_stock_id) REFERENCES platform_stock(platform_stock_id);
-
-ALTER TABLE automated_trade_rule
-ADD CONSTRAINT fk_automated_trade_rule_api_key
-FOREIGN KEY (api_key_id) REFERENCES api_key(api_key_id);
 
 ALTER TABLE automated_trade_rule
 ADD CONSTRAINT chk_automated_trade_rule_condition_type
@@ -53,10 +48,6 @@ CHECK (threshold_value > 0);
 ALTER TABLE automated_trade_rule
 ADD CONSTRAINT chk_automated_trade_rule_quantity_type
 CHECK (quantity_type IN ('QUANTITY', 'QUOTE_ORDER_QTY'));
-
-ALTER TABLE automated_trade_rule
-ADD CONSTRAINT chk_automated_trade_rule_date_created
-CHECK (date_created <= CURRENT_TIMESTAMP + INTERVAL '1 minute');
 
 CREATE OR REPLACE FUNCTION trg_automated_trade_rule_set_audit_fields()
 RETURNS TRIGGER AS $$
@@ -95,22 +86,20 @@ BEGIN
     INSERT INTO automated_trade_rule_history (
         rule_id, user_id, portfolio_id, platform_stock_id,
         condition_type, action_type, quantity_type, quantity, threshold_value,
-        api_key_id, date_created, is_active,
+        date_created,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
         entity_record.automated_trade_rule_id, entity_record.user_id,
         entity_record.portfolio_id, entity_record.platform_stock_id,
         entity_record.condition_type, entity_record.action_type,
         entity_record.quantity_type, entity_record.quantity, entity_record.threshold_value,
-        entity_record.api_key_id, entity_record.date_created, entity_record.is_active,
+        entity_record.date_created,
         entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

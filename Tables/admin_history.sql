@@ -1,7 +1,6 @@
 CREATE TABLE admin_history (
     admin_history_id INT GENERATED ALWAYS AS IDENTITY (START WITH 7499) PRIMARY KEY,
     admin_id INT NOT NULL,
-    permission_level VARCHAR(100) NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL,
     audit_created_date TIMESTAMP NOT NULL,
     audit_updated_by VARCHAR(255),

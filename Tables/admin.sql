@@ -1,6 +1,5 @@
 CREATE TABLE admin (
-    admin_id INT GENERATED ALWAYS AS IDENTITY (START WITH 7871) PRIMARY KEY,
-    permission_level VARCHAR(100) NOT NULL,
+    admin_id INT PRIMARY KEY,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
@@ -47,18 +46,16 @@ BEGIN
     END IF;
 
     INSERT INTO admin_history (
-        admin_id, permission_level,
+        admin_id, 
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
-        audit_version_number, history_dml_type,
-        history_logged_date
+        audit_version_number, history_dml_type
     ) VALUES (
-        entity_record.admin_id, entity_record.permission_level,
+        entity_record.admin_id, 
         entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
-        dml_type,
-        CURRENT_TIMESTAMP
+        dml_type
     );
 
     RETURN NULL;

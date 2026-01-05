@@ -1,8 +1,6 @@
-CREATE TABLE log (
-    log_id INT GENERATED ALWAYS AS IDENTITY (START WITH 9867) PRIMARY KEY,
-    user_id INT,
-    log_description TEXT NOT NULL,
-    log_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE platform (
+    platform_id INT GENERATED ALWAYS AS IDENTITY (START WITH 1923) PRIMARY KEY,
+    platform_name VARCHAR(100) NOT NULL UNIQUE,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
     audit_created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     audit_updated_by VARCHAR(255),
@@ -10,11 +8,7 @@ CREATE TABLE log (
     audit_version_number INT NOT NULL DEFAULT 0
 );
 
-ALTER TABLE log
-ADD CONSTRAINT fk_log_user
-FOREIGN KEY (user_id) REFERENCES "user"(user_id);
-
-CREATE OR REPLACE FUNCTION trg_log_set_audit_fields()
+CREATE OR REPLACE FUNCTION trg_platform_set_audit_fields()
 RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'UPDATE' THEN
@@ -26,12 +20,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_log_set_audit_fields
-BEFORE UPDATE ON log
+CREATE TRIGGER trg_platform_set_audit_fields
+BEFORE UPDATE ON platform
 FOR EACH ROW
-EXECUTE PROCEDURE trg_log_set_audit_fields();
+EXECUTE PROCEDURE trg_platform_set_audit_fields();
 
-CREATE OR REPLACE FUNCTION trg_log_audit_log_history()
+CREATE OR REPLACE FUNCTION trg_platform_audit_log_history()
 RETURNS TRIGGER AS $$
 DECLARE
     dml_type CHAR(1);
@@ -48,14 +42,13 @@ BEGIN
         entity_record := OLD;
     END IF;
 
-    INSERT INTO log_history (
-        log_id, user_id, log_description, log_date,
+    INSERT INTO platform_history (
+        platform_id, platform_name,
         audit_created_by, audit_created_date,
         audit_updated_by, audit_updated_date,
         audit_version_number, history_dml_type
     ) VALUES (
-        entity_record.log_id, entity_record.user_id, entity_record.log_description,
-        entity_record.log_date,
+        entity_record.platform_id, entity_record.platform_name,
         entity_record.audit_created_by, entity_record.audit_created_date,
         entity_record.audit_updated_by, entity_record.audit_updated_date,
         entity_record.audit_version_number,
@@ -66,7 +59,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_log_audit_log_history
-AFTER INSERT OR UPDATE OR DELETE ON log
+CREATE TRIGGER trg_platform_audit_log_history
+AFTER INSERT OR UPDATE OR DELETE ON platform
 FOR EACH ROW
-EXECUTE PROCEDURE trg_log_audit_log_history();
+EXECUTE PROCEDURE trg_platform_audit_log_history();
