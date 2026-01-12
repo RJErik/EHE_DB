@@ -29,11 +29,11 @@ CHECK (transaction_type IN ('BUY', 'SELL'));
 
 ALTER TABLE transaction
 ADD CONSTRAINT chk_transaction_quantity
-CHECK (quantity > 0);
+CHECK (quantity >= 0);
 
 ALTER TABLE transaction
 ADD CONSTRAINT chk_transaction_price
-CHECK (price > 0);
+CHECK (price >= 0);
 
 ALTER TABLE transaction
 ADD CONSTRAINT chk_transaction_status
