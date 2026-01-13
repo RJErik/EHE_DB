@@ -9,17 +9,14 @@ CREATE TABLE email_change_request (
     audit_version_number INT NOT NULL DEFAULT 0
 );
 
--- Foreign Key constraint
 ALTER TABLE email_change_request
 ADD CONSTRAINT fk_email_change_request_verification_token
 FOREIGN KEY (verification_token_id) REFERENCES verification_token(verification_token_id) ON DELETE CASCADE;
 
--- Email format validation
 ALTER TABLE email_change_request
 ADD CONSTRAINT chk_email_change_request_new_email
 CHECK (new_email ~ '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
 
--- Index for faster lookups
 CREATE INDEX idx_email_change_request_token_id ON email_change_request(verification_token_id);
 
 CREATE OR REPLACE FUNCTION trg_email_change_request_set_audit_fields()

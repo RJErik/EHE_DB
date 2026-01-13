@@ -3,8 +3,8 @@ CREATE TABLE verification_token (
     verification_token_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id INT NOT NULL,
     token_hash VARCHAR(255) NOT NULL UNIQUE,
-    token_type VARCHAR(50) NOT NULL, -- e.g., REGISTRATION, PASSWORD_RESET, EMAIL_CHANGE
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- Status of the token
+    token_type VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     issue_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expiry_date TIMESTAMP NOT NULL,
     audit_created_by VARCHAR(255) NOT NULL DEFAULT current_setting('ehe.current_user', true),
@@ -14,17 +14,14 @@ CREATE TABLE verification_token (
     audit_version_number INT NOT NULL DEFAULT 0
 );
 
--- Foreign Key constraint
 ALTER TABLE verification_token
 ADD CONSTRAINT fk_verification_token_user
 FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE;
 
--- Check constraint for token type
 ALTER TABLE verification_token
 ADD CONSTRAINT chk_verification_token_type
 CHECK (token_type IN ('REGISTRATION', 'PASSWORD_RESET', 'EMAIL_CHANGE'));
 
--- Check constraint for token status
 ALTER TABLE verification_token
 ADD CONSTRAINT chk_verification_token_status
 CHECK (status IN ('ACTIVE', 'USED', 'EXPIRED', 'INVALIDATED'));
@@ -33,12 +30,10 @@ ALTER TABLE verification_token
 ADD CONSTRAINT chk_verification_token_expiry_after_issue
 CHECK (expiry_date > issue_date);
 
--- Index for faster token lookup
 CREATE INDEX idx_verification_token_token_hash ON verification_token(token_hash);
 
--- Index for faster user token lookup
 CREATE INDEX idx_verification_token_user_id ON verification_token(user_id);
-CREATE INDEX idx_verification_token_user_type ON verification_token(user_id, token_type); -- For finding user tokens
+CREATE INDEX idx_verification_token_user_type ON verification_token(user_id, token_type);
 
 CREATE OR REPLACE FUNCTION trg_verification_token_set_audit_fields()
 RETURNS TRIGGER AS $$
